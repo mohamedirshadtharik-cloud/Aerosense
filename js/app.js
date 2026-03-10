@@ -63,8 +63,8 @@ const DOM = {
         co:   { val: document.getElementById('valCo'),   bar: document.getElementById('barCo'),   max: 10 },
         so2:  { val: document.getElementById('valSo2'),  bar: document.getElementById('barSo2'),  max: 200 }
     },
-
     
+    stateSelect: document.getElementById('stateSelect'),
     chartSelect: document.getElementById('chartMetricSelect'),
     chartCanvas: document.getElementById('trendsChart'),
     
@@ -83,9 +83,39 @@ async function loadPublicAqiData() {
     try {
         const response = await fetch('assets/data/aqi_data.json');
         publicAqiData = await response.json();
+        initStateSelector();
     } catch (err) {
         console.warn("Local AQI data not found or failed to load.", err);
     }
+}
+
+function initStateSelector() {
+    if (!DOM.stateSelect || !publicAqiData || publicAqiData.length === 0) return;
+    
+    const states = Array.from(new Set(publicAqiData.map(item => item.state))).sort();
+    
+    DOM.stateSelect.innerHTML = `<option value=\"\">All India (default)</option>` + 
+        states.map(state => `<option value=\"${state}\">${state}</option>`).join('');
+    
+    DOM.stateSelect.addEventListener('change', handleStateChange);
+}
+
+function handleStateChange(e) {
+    const state = e.target.value;
+    
+    if (!state) {
+        // Back to default view (Delhi)
+        loadLocation("Delhi", 28.61, 77.20);
+        return;
+    }
+    
+    const stateCities = publicAqiData.filter(item => item.state === state);
+    if (!stateCities.length) return;
+    
+    // Choose the city with highest AQI in that state
+    const worstCity = stateCities.reduce((max, item) => item.AQI > max.AQI ? item : max, stateCities[0]);
+    
+    loadLocation(worstCity.city, worstCity.lat, worstCity.lng);
 }
 
 
@@ -473,6 +503,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     DOM.chartSelect.addEventListener('change', (e) => updateChart(e.target.value));
     
     // Load initial default location (Delhi)
-    loadLocation("Delhi, India", 28.61, 77.20);
+    loadLocation("Delhi", 28.61, 77.20);
 
 });

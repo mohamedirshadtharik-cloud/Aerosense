@@ -225,6 +225,21 @@ body {
     gap: 1rem;
 }
 
+.state-select-wrapper {
+    margin-left: 1rem;
+}
+
+.glass-select {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--glass-border);
+    padding: 0.4rem 1rem;
+    border-radius: var(--border-radius-sm);
+    font-family: var(--font-family);
+    outline: none;
+    cursor: pointer;
+}
+
 .btn {
     cursor: pointer;
     font-family: var(--font-family);
