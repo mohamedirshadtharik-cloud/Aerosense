@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indian Cities AQI | AeroSense</title>
+
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <style>
+        .table-container {
+            margin-top: 2rem;
+            overflow-x: auto;
+        }
+
+        .premium-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius-lg);
+            overflow: hidden;
+        }
+
+        .premium-table th {
+            background: rgba(255, 255, 255, 0.05);
+            text-align: left;
+            padding: 1.25rem 1.5rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .premium-table td {
+            padding: 1.1rem 1.5rem;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--glass-border);
+            transition: background 0.2s;
+        }
+
+        .premium-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .premium-table tr:hover td {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.35rem 0.85rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: capitalize;
+        }
+
+        .aqi-val {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .btn-load {
+            background: linear-gradient(135deg, var(--accent-blue), #6366f1);
+            color: #fff;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            padding: 0.75rem 1.5rem;
+            font-family: var(--font-family);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 1.5rem;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        .btn-load:hover {
+            transform: translateY(-1px);
+            opacity: 0.9;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="logo">
+                <i class="fa-solid fa-wind"></i>
+                <span>AeroSense</span>
+            </div>
+            
+            <ul class="nav-links">
+                <li><a href="index.html"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
+                <li><a href="heatmap.html"><i class="fa-solid fa-map-location-dot"></i> Heatmap</a></li>
+                <li><a href="history.html"><i class="fa-solid fa-clock-rotate-left"></i> History</a></li>
+                <li><a href="health.html"><i class="fa-solid fa-heart-pulse"></i> Health</a></li>
+                <li><a href="advisory.html"><i class="fa-solid fa-bullhorn"></i> Advisory</a></li>
+                <li class="active"><a href="districts.html"><i class="fa-solid fa-table-list"></i> Districts</a></li>
+            </ul>
+            
+            <div class="user-profile">
+                <div class="avatar"><i class="fa-regular fa-user"></i></div>
+                <div class="profile-info">
+                    <span class="name">Guest User</span>
+                    <span class="settings"><i class="fa-solid fa-gear"></i> Settings</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="header">
+                <h2><i class="fa-solid fa-table-list" style="margin-right:10px;color:var(--accent-blue);"></i> Indian Cities Air Quality Index</h2>
+            </header>
+
+
+            <div style="padding: 2rem;">
+                <p style="color:var(--text-secondary); margin-bottom: 1rem; font-size: 0.9rem;">
+                    Real-time monitoring across 25+ major Indian cities using multi-source station data (OpenAQ + API-Ninjas).
+                </p>
+                <button class="btn-load" id="btnLoadData">
+                    <i class="fa-solid fa-rotate"></i> Load National Data
+                </button>
+
+
+
+                <div class="table-container">
+                    <table class="premium-table" id="aqiTable">
+                        <thead>
+                            <tr>
+                                <th>City / Region</th>
+                                <th>State</th>
+
+
+                                <th>AQI (US)</th>
+                                <th>PM2.5 (µg/m³)</th>
+                                <th>PM10 (µg/m³)</th>
+                                <th>CO (mg/m³)</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be injected here -->
+                            <tr>
+                                <td colspan="5" style="text-align:center; color:var(--text-muted); padding: 3rem;">
+                                    Click "Load National Data" to fetch live readings from across India.
+
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/districts.js"></script>
+</body>
+</html>

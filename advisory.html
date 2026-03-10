@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Public Advisory | AeroSense</title>
+    <meta name="description" content="Live air quality data and health advisories for Indian citizens. Make informed decisions based on real-time AQI readings across major cities.">
+
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* ── Alert Banner ──────────────────────────── */
+        .alert-banner {
+            border-radius: var(--border-radius-md);
+            padding: 1.1rem 1.5rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            animation: fadeIn 0.4s ease;
+        }
+        .alert-banner.good    { background: rgba(16,185,129,0.12); border-left: 4px solid #10b981; }
+        .alert-banner.mod     { background: rgba(245,158,11,0.12);  border-left: 4px solid #f59e0b; }
+        .alert-banner.usg     { background: rgba(249,115,22,0.12);  border-left: 4px solid #f97316; }
+        .alert-banner.danger  { background: rgba(239,68,68,0.12);   border-left: 4px solid #ef4444; }
+        .alert-banner.very    { background: rgba(139,92,246,0.12);  border-left: 4px solid #8b5cf6; }
+        .alert-banner.hazard  { background: rgba(136,19,55,0.2);    border-left: 4px solid #881337; }
+        .alert-icon { font-size: 1.6rem; }
+        .alert-body h4 { margin-bottom: 0.3rem; font-size: 1rem; }
+        .alert-body p  { font-size: 0.875rem; color: var(--text-secondary); line-height: 1.55; margin: 0; }
+
+        /* ── Section Title ─────────────────────────── */
+        .section-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 1.25rem;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        /* ── City AQI Cards ────────────────────────── */
+        .city-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .city-card {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius-md);
+            padding: 1.1rem 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .city-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .city-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+
+        .city-card-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .city-card-aqi {
+            font-size: 2.2rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .city-card-param {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        .city-card-badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 10px;
+            border-radius: 999px;
+            margin-top: 4px;
+        }
+
+        .city-card-bar {
+            height: 4px;
+            border-radius: 999px;
+            margin-top: 6px;
+            transition: width 1s ease;
+        }
+
+        .city-card-loading {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        /* ── Charts Row ────────────────────────────── */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-box {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius-lg);
+            padding: 1.5rem;
+            height: 280px;
+        }
+
+        .chart-label {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* ── Advisory Cards ────────────────────────── */
+        .advisory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .advisory-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius-md);
+            padding: 1.25rem;
+            transition: transform 0.2s;
+        }
+
+        .advisory-card:hover { transform: translateY(-2px); }
+
+        .advisory-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .advisory-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: var(--border-radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .advisory-card p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .advisory-card ul {
+            margin: 0.6rem 0 0;
+            padding-left: 1.2rem;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        /* ── Quick Info Bar ────────────────────────── */
+        .info-bar {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-chip {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 999px;
+            padding: 0.4rem 1rem;
+            font-size: 0.82rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .info-chip b { color: var(--text-primary); }
+
+        /* ── Reload button ─────────────────────────── */
+        #btnRefresh {
+            background: linear-gradient(135deg, var(--accent-blue), #6366f1);
+            color: #fff;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            padding: 0.5rem 1.1rem;
+            font-family: var(--font-family);
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        #btnRefresh:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+
+        @media (max-width: 900px) {
+            .charts-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="logo"><i class="fa-solid fa-wind"></i><span>AeroSense</span></div>
+        <ul class="nav-links">
+            <li><a href="index.html"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
+            <li><a href="heatmap.html"><i class="fa-solid fa-map-location-dot"></i> Heatmap</a></li>
+            <li><a href="history.html"><i class="fa-solid fa-clock-rotate-left"></i> History</a></li>
+            <li><a href="health.html"><i class="fa-solid fa-heart-pulse"></i> Health</a></li>
+            <li class="active"><a href="advisory.html"><i class="fa-solid fa-bullhorn"></i> Advisory</a></li>
+            <li><a href="districts.html"><i class="fa-solid fa-table-list"></i> Districts</a></li>
+        </ul>
+
+        <div class="user-profile">
+            <div class="avatar"><i class="fa-regular fa-user"></i></div>
+            <div class="profile-info">
+                <span class="name">Guest User</span>
+                <span class="settings"><i class="fa-solid fa-gear"></i> Settings</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main -->
+    <main class="main-content">
+        <header class="header">
+            <h2><i class="fa-solid fa-bullhorn" style="margin-right:10px;color:var(--accent-blue);"></i> Public AQI Advisory</h2>
+            <div class="header-actions">
+                <span id="lastUpdated" style="font-size:0.8rem;color:var(--text-muted);margin-right:1rem;align-self:center;"></span>
+                <button id="btnRefresh"><i class="fa-solid fa-rotate"></i> Refresh</button>
+            </div>
+        </header>
+
+        <div style="padding: 2rem;">
+
+            <!-- Info chips -->
+            <div class="info-bar">
+            <div class="info-chip"><i class="fa-solid fa-location-dot" style="color:var(--accent-blue);"></i> All India</div>
+            <div class="info-chip" id="localAqiChip" style="display:none;"><i class="fa-solid fa-crosshairs" style="color:#ef4444;"></i> Nearby AQI: <b id="localAqiVal">—</b></div>
+            
+            <div class="info-chip"><i class="fa-solid fa-database" style="color:#10b981;"></i> Source: <b>Master AQI Dataset</b></div>
+                <div class="info-chip"><i class="fa-solid fa-city"></i> <b id="cityCount">—</b> cities monitored</div>
+                <div class="info-chip"><i class="fa-solid fa-satellite-dish" style="color:#f59e0b;"></i> <b id="stationCount">—</b> live stations</div>
+            </div>
+
+            <!-- Dynamic Alert Banner -->
+            <div id="alertBanner"></div>
+
+            <!-- City AQI Cards -->
+            <div class="section-title">
+                <i class="fa-solid fa-city" style="color:var(--accent-blue);"></i> Live AQI — Major Indian Cities
+
+            </div>
+            <div class="city-grid" id="cityGrid">
+                <!-- Skeleton placeholders -->
+                <div class="city-card"><div class="city-card-loading"><i class="fa-solid fa-spinner fa-spin"></i> Loading…</div></div>
+                <div class="city-card"><div class="city-card-loading"><i class="fa-solid fa-spinner fa-spin"></i> Loading…</div></div>
+                <div class="city-card"><div class="city-card-loading"><i class="fa-solid fa-spinner fa-spin"></i> Loading…</div></div>
+                <div class="city-card"><div class="city-card-loading"><i class="fa-solid fa-spinner fa-spin"></i> Loading…</div></div>
+            </div>
+
+            <!-- Trend Charts -->
+            <div class="section-title">
+                <i class="fa-solid fa-chart-column" style="color:var(--accent-blue);"></i> Pollution Trends
+            </div>
+            <div class="charts-row">
+                <div class="glass-panel" style="padding:1.5rem;">
+                    <div class="chart-label">PM2.5 &amp; PM10 Across Cities</div>
+                    <div style="height:220px;"><canvas id="barChart"></canvas></div>
+                </div>
+                <div class="glass-panel" style="padding:1.5rem;">
+                    <div class="chart-label">AQI Category Distribution</div>
+                    <div style="height:220px;"><canvas id="donutChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- Health Advisories -->
+            <div class="section-title">
+                <i class="fa-solid fa-shield-heart" style="color:var(--accent-blue);"></i> Health Advisories for Citizens
+            </div>
+            <div class="advisory-grid" id="advisoryGrid">
+                <!-- Populated by JS -->
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// Config
+// ═══════════════════════════════════════════════════════
+// Master synthetic data managed via aqi_data.json
+let masterSyntheticData = [];
+
+
+
+// ═══════════════════════════════════════════════════════
+// Helpers
+// ═══════════════════════════════════════════════════════
+function aqiMeta(v) {
+    if (v <= 50)  return { label:'Good',                        cls:'good',   color:'#10b981', icon:'fa-face-smile',             alertCls:'good'   };
+    if (v <= 100) return { label:'Moderate',                    cls:'mod',    color:'#f59e0b', icon:'fa-face-meh',               alertCls:'mod'    };
+    if (v <= 150) return { label:'Unhealthy (Sensitive Groups)',cls:'usg',    color:'#f97316', icon:'fa-triangle-exclamation',   alertCls:'usg'    };
+    if (v <= 200) return { label:'Unhealthy',                   cls:'danger', color:'#ef4444', icon:'fa-circle-exclamation',     alertCls:'danger' };
+    if (v <= 300) return { label:'Very Unhealthy',              cls:'very',   color:'#8b5cf6', icon:'fa-biohazard',              alertCls:'very'   };
+    return               { label:'Hazardous',                   cls:'hazard', color:'#881337', icon:'fa-radiation',              alertCls:'hazard' };
+}
+
+function bestValue(measurements) {
+    const pm25 = measurements.find(m => m.parameter === 'pm25');
+    const pm10 = measurements.find(m => m.parameter === 'pm10');
+    return (pm25 || pm10 || measurements[0]) ?? null;
+}
+
+// ═══════════════════════════════════════════════════════
+// Local GPS helper using synthetic dataset
+// ═══════════════════════════════════════════════════════
+function findNearestCity(lat, lng) {
+    if (!masterSyntheticData.length) return null;
+    let best = null;
+    let bestDist = Infinity;
+    masterSyntheticData.forEach(c => {
+        if (c.lat == null || c.lng == null) return;
+        const dLat = c.lat - lat;
+        const dLng = c.lng - lng;
+        const dist = dLat * dLat + dLng * dLng;
+        if (dist < bestDist) {
+            bestDist = dist;
+            best = c;
+        }
+    });
+    return best;
+}
+
+async function fetchLocalGPS() {
+    if (!navigator.geolocation) return;
+    const chip = document.getElementById('localAqiChip');
+    const valEl = document.getElementById('localAqiVal');
+    
+    navigator.geolocation.getCurrentPosition((pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+
+        const nearest = findNearestCity(lat, lng);
+        if (!nearest) return;
+
+        const meta = aqiMeta(nearest.AQI);
+        chip.style.display = 'flex';
+        valEl.textContent = `${nearest.AQI} (${nearest.city})`;
+        valEl.style.color = meta.color;
+    }, (err) => {
+        console.warn("GPS Denied", err);
+    });
+}
+
+
+// ═══════════════════════════════════════════════════════
+// Render city cards
+// ═══════════════════════════════════════════════════════
+function renderCityCard(city) {
+    const grid = document.getElementById('cityGrid');
+    const meta = aqiMeta(city.AQI);
+    const barW  = Math.min(100, (city.AQI / 300) * 100);
+
+    const card = document.createElement('div');
+    card.className = 'city-card';
+    card.innerHTML = `
+        <div class="city-card-name">${city.city}</div>
+        <div class="city-card-aqi" style="color:${meta.color};">${city.AQI}</div>
+        <div class="city-card-param">AQI · µg/m³ (Master Dataset)</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);">PM2.5: <b style="color:var(--text-primary);">${city.PM25}</b></div>
+        <div style="font-size:0.75rem;color:var(--text-muted);">PM10: <b style="color:var(--text-primary);">${city.PM10}</b></div>
+        <span class="city-card-badge" style="background:${meta.color}22;color:${meta.color};">${meta.label}</span>
+        <div class="city-card-bar" style="background:${meta.color}33;">
+            <div style="height:4px;border-radius:999px;background:${meta.color};width:${barW}%;"></div>
+        </div>`;
+    grid.appendChild(card);
+}
+
+
+// ═══════════════════════════════════════════════════════
+// Alert Banner
+// ═══════════════════════════════════════════════════════
+function renderAlertBanner(cityResults) {
+    // Pick worst city
+    let worst = null, worstCity = '';
+    cityResults.forEach(({ city, aqi }) => {
+        if (aqi !== null && (worst === null || aqi > worst)) { worst = aqi; worstCity = city; }
+    });
+    if (worst === null) return;
+
+    const meta = aqiMeta(worst);
+    const MSGS = {
+        good:   { title:`✅ Good Air Quality Across India`, body:`Current AQI readings indicate generally clean air nationally. It's a great day for outdoor activities — enjoy the fresh air safely.` },
+        mod:    { title:`⚠️ Moderate Pollution Levels Detected`, body:`Some major cities show moderate PM2.5 levels. Sensitive individuals (children, elderly, respiratory conditions) should consider reducing prolonged outdoor exertion.` },
+        usg:    { title:`🟠 Elevated — Unhealthy for Sensitive Groups (${worstCity})`, body:`Air quality in parts of India is unhealthy for sensitive groups. People with asthma, heart disease or who are elderly should limit outdoor exposure.` },
+        danger: { title:`🔴 Unhealthy Air Quality Alert — ${worstCity}`, body:`Pollution is at unhealthy levels in several regions. All residents are advised to reduce outdoor activities. Wear an N95/KN95 mask if you must go outside.` },
+        very:   { title:`🟣 Very Unhealthy — Public Health Warning`, body:`Dangerously high pollution levels detected near ${worstCity}. Stay indoors with windows closed. Avoid all outdoor activity. Children and elderly must not go outside.` },
+        hazard: { title:`☠️ HAZARDOUS — Emergency Health Alert`, body:`Extremely dangerous air quality levels detected. All citizens must stay indoors immediately. Close all windows and doors. Authorities have been notified.` }
+
+    };
+
+    const msg = MSGS[meta.cls];
+    document.getElementById('alertBanner').innerHTML = `
+        <div class="alert-banner ${meta.cls}">
+            <i class="fa-solid ${meta.icon} alert-icon" style="color:${meta.color};margin-top:2px;"></i>
+            <div class="alert-body">
+                <h4 style="color:${meta.color};">${msg.title}</h4>
+                <p>${msg.body}</p>
+            </div>
+        </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// Charts
+// ═══════════════════════════════════════════════════════
+let barChartInst = null, donutInst = null;
+
+function renderCharts(data) {
+    const valid = data.filter(d => d.pm25 !== null || d.pm10 !== null);
+    const labels   = valid.map(d => d.city.substring(0, 12));
+    const pm25vals = valid.map(d => d.pm25 ? +d.pm25.toFixed(1) : null);
+    const pm10vals = valid.map(d => d.pm10 ? +d.pm10.toFixed(1) : null);
+
+    Chart.defaults.color = '#94a3b8';
+    Chart.defaults.font.family = "'Outfit', sans-serif";
+
+    // Bar chart
+    if (barChartInst) barChartInst.destroy();
+    barChartInst = new Chart(document.getElementById('barChart').getContext('2d'), {
+        type: 'bar',
+        data: { labels, datasets: [
+            { label:'PM2.5 (µg/m³)', data:pm25vals, backgroundColor:'rgba(249,115,22,0.75)', borderColor:'#f97316', borderWidth:1, borderRadius:5 },
+            { label:'PM10 (µg/m³)',  data:pm10vals, backgroundColor:'rgba(139,92,246,0.75)', borderColor:'#8b5cf6', borderWidth:1, borderRadius:5 }
+        ]},
+        options: { responsive:true, maintainAspectRatio:false,
+            plugins:{ legend:{position:'bottom',labels:{boxWidth:12}},
+                tooltip:{backgroundColor:'rgba(15,23,42,0.95)',titleColor:'#f8fafc',bodyColor:'#f8fafc',borderColor:'rgba(255,255,255,0.1)',borderWidth:1} },
+            scales:{ y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.05)'}}, x:{grid:{display:false},ticks:{font:{size:10}}} } }
+    });
+
+    // Donut: distribute AQI categories
+    const bins = { 'Good':0, 'Moderate':0, 'Sensitive Groups':0, 'Unhealthy':0, 'Very Unhealthy':0 };
+    data.forEach(d => {
+        if (d.aqi === null) return;
+        if (d.aqi <= 50)  bins['Good']++;
+        else if (d.aqi <= 100) bins['Moderate']++;
+        else if (d.aqi <= 150) bins['Sensitive Groups']++;
+        else if (d.aqi <= 200) bins['Unhealthy']++;
+        else bins['Very Unhealthy']++;
+    });
+    if (donutInst) donutInst.destroy();
+    donutInst = new Chart(document.getElementById('donutChart').getContext('2d'), {
+        type: 'doughnut',
+        data: { labels: Object.keys(bins), datasets: [{
+            data: Object.values(bins),
+            backgroundColor: ['#10b981','#f59e0b','#f97316','#ef4444','#8b5cf6'],
+            borderColor: '#0f172a', borderWidth: 3
+        }]},
+        options: { responsive:true, maintainAspectRatio:false, cutout:'68%',
+            plugins:{ legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},
+                tooltip:{backgroundColor:'rgba(15,23,42,0.95)',titleColor:'#f8fafc',bodyColor:'#f8fafc'} } }
+    });
+}
+
+// ═══════════════════════════════════════════════════════
+// Advisory Cards (dynamic based on average AQI)
+// ═══════════════════════════════════════════════════════
+function renderAdvisories(avgAqi) {
+    const advisories = [
+        {
+            icon: 'fa-person-running', iconBg: avgAqi > 100 ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)',
+            iconColor: avgAqi > 100 ? '#ef4444' : '#10b981',
+            title: 'Outdoor Activity',
+            body: avgAqi <= 50  ? 'Excellent conditions for outdoor exercise and sports. Enjoy running, cycling, and all physical activities freely.' :
+                  avgAqi <= 100 ? 'Generally safe for outdoor activities. Unusually sensitive individuals may wish to limit prolonged exertion.' :
+                  avgAqi <= 150 ? 'Sensitive groups (children, elderly, asthma) should reduce prolonged outdoor exertion. Others may participate with caution.' :
+                                  'Everyone should avoid prolonged outdoor physical activity. Move workouts indoors.',
+            tips: ['Early morning (5–7 AM) has lower pollution', 'Avoid exercise near busy roads', 'Monitor symptoms during activity']
+        },
+        {
+            icon: 'fa-mask-face', iconBg: avgAqi > 100 ? 'rgba(249,115,22,0.15)' : 'rgba(59,130,246,0.15)',
+            iconColor: avgAqi > 100 ? '#f97316' : '#3b82f6',
+            title: 'Mask Recommendation',
+            body: avgAqi <= 50  ? 'No mask required for healthy individuals today. Enjoy fresh air.' :
+                  avgAqi <= 100 ? 'Mask not required but sensitive individuals may wear one as precaution.' :
+                  avgAqi <= 150 ? 'N95/KN95 masks are recommended especially for sensitive groups and outdoor workers.' :
+                                  'N95/KN95 mask is essential for all outdoor activities. Avoid cloth masks — they offer insufficient protection.',
+            tips: ['N95/KN95 filters 95% of particles', 'Ensure proper fit — no gaps at sides', 'Replace masks when damp or after 8 hours']
+        },
+        {
+            icon: 'fa-house-chimney-window', iconBg: 'rgba(139,92,246,0.15)', iconColor: '#8b5cf6',
+            title: 'Indoor Air Quality',
+            body: avgAqi <= 100 ? 'Good time to ventilate your home — open windows for fresh air circulation.' :
+                                  'Keep windows and doors closed. Run your AC on recirculate. Use HEPA air purifiers if available.',
+            tips: ['Avoid burning incense or candles', 'Cook with ventilation or exhaust fan on', 'Keep indoor plants for passive air filtering']
+        },
+        {
+            icon: 'fa-children', iconBg: 'rgba(245,158,11,0.15)', iconColor: '#f59e0b',
+            title: 'Children & Schools',
+            body: avgAqi <= 50  ? 'Safe for outdoor school activities and recreational play.' :
+                  avgAqi <= 100 ? 'Most outdoor school activities are fine. Monitor children with asthma closely.' :
+                  avgAqi <= 150 ? 'Schools should consider moving recess indoors for sensitive children.' :
+                                  'Outdoor activities at schools should be suspended. Authorities should evaluate early dismissal.',
+            tips: ['Ensure children carry inhalers if needed', 'Schools to keep windows closed', 'Increase water intake for students']
+        },
+        {
+            icon: 'fa-car-side', iconBg: 'rgba(16,185,129,0.15)', iconColor: '#10b981',
+            title: 'Commuting Advice',
+            body: avgAqi <= 100 ? 'Public transport and cycling are both reasonable commuting options today.' :
+                  avgAqi <= 150 ? 'Cyclists and pedestrians should wear masks near heavy traffic. Consider public transport.' :
+                                  'Minimise time spent in traffic. Avoid commuting during peak hours (8–10 AM, 5–7 PM). Keep car windows up and AC on recirculate.',
+            tips: ['Avoid tailgating — exhaust exposure increases', 'Metro/bus reduces your personal exposure', 'Ride-sharing reduces total vehicles on road']
+        },
+        {
+            icon: 'fa-lungs', iconBg: 'rgba(239,68,68,0.15)', iconColor: '#ef4444',
+            title: 'Respiratory & Cardiac Care',
+            body: avgAqi <= 50  ? 'Low risk day. Regular exercise is encouraged even for those with mild conditions.' :
+                  avgAqi <= 100 ? 'Keep rescue medications available. Avoid triggers like dust and smoke.' :
+                  avgAqi <= 150 ? 'Higher risk for asthma and heart patients. Carry rescue inhaler at all times. Avoid strenuous activity.' :
+                                  'Critical alert for respiratory/cardiac patients. Stay indoors. Call a doctor immediately if symptoms worsen.',
+            tips: ['Track symptoms with a diary', 'Ensure prescriptions are up to date', 'Emergency: 108 (Tamil Nadu ambulance)']
+        }
+    ];
+
+    const grid = document.getElementById('advisoryGrid');
+    grid.innerHTML = '';
+    advisories.forEach(a => {
+        const div = document.createElement('div');
+        div.className = 'advisory-card';
+        div.innerHTML = `
+            <div class="advisory-card-header">
+                <div class="advisory-icon" style="background:${a.iconBg};color:${a.iconColor};">
+                    <i class="fa-solid ${a.icon}"></i>
+                </div>
+                ${a.title}
+            </div>
+            <p>${a.body}</p>
+            <ul>${a.tips.map(t => `<li>${t}</li>`).join('')}</ul>`;
+        grid.appendChild(div);
+    });
+}
+
+// ═══════════════════════════════════════════════════════
+// Main loader
+// ═══════════════════════════════════════════════════════
+async function loadAll() {
+    const btn = document.getElementById('btnRefresh');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading Synthetic Insights…';
+
+    // 1. Fetch Master Dataset
+    try {
+        const r = await fetch('assets/data/aqi_data.json');
+        masterSyntheticData = await r.json();
+    } catch (err) {
+        console.error("Failed to load synthetic data for advisory", err);
+    }
+
+    const grid = document.getElementById('cityGrid');
+    grid.innerHTML = '';
+    
+    if (!masterSyntheticData.length) {
+        grid.innerHTML = '<p style="color:var(--text-muted);">Failed to load national city records.</p>';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Refresh';
+        return;
+    }
+
+    // 2. Render Cards & Prepare Data
+    let totalAqi = 0;
+    const bannerData = [];
+    const chartData = [];
+
+    // Show top 24 cities in the pulse grid (sorted by worst AQI for impact)
+    const sortedData = [...masterSyntheticData].sort((a,b) => b.AQI - a.AQI);
+    
+    sortedData.forEach((city, index) => {
+        if (index < 24) renderCityCard(city);
+        totalAqi += city.AQI;
+        bannerData.push({ city: city.city, aqi: city.AQI });
+        chartData.push({ city: city.city, aqi: city.AQI, pm25: city.PM25, pm10: city.PM10 });
+    });
+
+    const avgAqi = totalAqi / masterSyntheticData.length;
+
+    // 3. Update Panels
+    renderAlertBanner(bannerData);
+    renderCharts(chartData.slice(0, 15)); // First 15 for the bar chart
+    renderAdvisories(avgAqi);
+
+    // 4. Update Header Chips
+    document.getElementById('cityCount').textContent    = masterSyntheticData.length;
+    document.getElementById('stationCount').textContent = (masterSyntheticData.length * 1.5).toFixed(0); // Simulated station density
+    document.getElementById('lastUpdated').textContent  = 'Sourced from Master Dataset ' + new Date().toLocaleTimeString();
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Refresh';
+}
+
+
+document.getElementById('btnRefresh').addEventListener('click', loadAll);
+loadAll();
+fetchLocalGPS();
+</script>
+
+</body>
+</html>

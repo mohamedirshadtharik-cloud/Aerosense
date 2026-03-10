@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Insights | AeroSense</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <style>
+        /* ─── Layout ─────────────────────────────── */
+        .health-grid {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 2rem;
+        }
+
+        /* ─── Profile Form Card ──────────────────── */
+        .profile-card {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .profile-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: var(--border-radius-full);
+            background: linear-gradient(135deg, var(--accent-blue), #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        /* Form elements */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .form-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-secondary);
+        }
+
+        .form-input, .form-select {
+            background: var(--bg-secondary);
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
+            border-radius: var(--border-radius-sm);
+            padding: 0.65rem 1rem;
+            font-family: var(--font-family);
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+            width: 100%;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+        }
+
+        /* Range slider */
+        .range-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+
+            flex: 1;
+            height: 6px;
+            border-radius: 999px;
+            background: var(--bg-tertiary);
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            box-shadow: 0 0 6px rgba(59,130,246,0.5);
+        }
+
+        .range-val {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            min-width: 32px;
+            text-align: right;
+        }
+
+        /* Condition checkboxes */
+        .condition-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.6rem;
+        }
+
+        .condition-label {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius-sm);
+            padding: 0.55rem 0.85rem;
+            cursor: pointer;
+            font-size: 0.82rem;
+            transition: all 0.2s;
+        }
+
+        .condition-label:hover {
+            border-color: var(--accent-blue);
+        }
+
+        .condition-label input[type=checkbox] {
+            accent-color: var(--accent-blue);
+            width: 15px;
+            height: 15px;
+            cursor: pointer;
+        }
+
+        .condition-label.checked {
+            border-color: var(--accent-blue);
+            background: rgba(59,130,246,0.1);
+        }
+
+        /* Calculate button */
+        .btn-calculate {
+            background: linear-gradient(135deg, var(--accent-blue), #6366f1);
+            color: #fff;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            padding: 0.85rem 1.5rem;
+            font-family: var(--font-family);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            transition: opacity 0.2s, transform 0.2s;
+            width: 100%;
+        }
+
+        .btn-calculate:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        /* ─── Risk Results Panel ─────────────────── */
+        .results-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* Overall Risk Score meter */
+        .risk-score-card {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            padding: 1.75rem;
+        }
+
+        .risk-meter {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            flex-shrink: 0;
+        }
+
+        .risk-meter svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .risk-meter .ring-bg  { stroke: var(--bg-tertiary); stroke-width: 9; fill: none; }
+        .risk-meter .ring-fill { stroke: #3b82f6; stroke-width: 9; fill: none; stroke-linecap: round;
+            stroke-dasharray: 283; stroke-dashoffset: 283;
+            transition: stroke-dashoffset 1.2s cubic-bezier(0.1,0.7,0.1,1), stroke 0.4s ease; }
+
+        .risk-meter-label {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .risk-score-num {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .risk-score-text {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .risk-score-info h3 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+        }
+
+        .risk-score-info p {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.55;
+        }
+
+        /* Factor breakdown bars */
+        .factor-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+        }
+
+        .factor-row {
+            display: grid;
+            grid-template-columns: 140px 1fr 40px;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .factor-name {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+
+        .factor-bar-track {
+            background: var(--bg-tertiary);
+            border-radius: 999px;
+            height: 8px;
+            overflow: hidden;
+        }
+
+        .factor-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            transition: width 1s ease;
+            width: 0%;
+        }
+
+        .factor-pct {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-align: right;
+        }
+
+        /* Advice cards (reused from before) */
+        .action-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+        }
+
+        .action-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius-md);
+            padding: 1.25rem;
+            transition: transform 0.2s;
+        }
+
+        .action-card:hover { transform: translateY(-2px); }
+
+        .action-header {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            margin-bottom: 0.65rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .action-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .action-card.safe  .action-header i { color: var(--aqi-good); }
+        .action-card.warn  .action-header i { color: var(--aqi-unhealthy-sensitive); }
+        .action-card.danger .action-header i { color: var(--aqi-unhealthy); }
+        .action-card.info  .action-header i { color: var(--accent-blue); }
+
+        /* Placeholder before calculation */
+        .results-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            min-height: 300px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            text-align: center;
+        }
+
+        .results-placeholder i {
+            font-size: 3rem;
+            color: var(--bg-tertiary);
+        }
+
+        @media (max-width: 960px) {
+            .health-grid { grid-template-columns: 1fr; }
+            .action-cards { grid-template-columns: 1fr; }
+            .condition-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="logo">
+                <i class="fa-solid fa-wind"></i>
+                <span>AeroSense</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
+                <li><a href="heatmap.html"><i class="fa-solid fa-map-location-dot"></i> Heatmap</a></li>
+                <li><a href="history.html"><i class="fa-solid fa-clock-rotate-left"></i> History</a></li>
+                <li class="active"><a href="health.html"><i class="fa-solid fa-heart-pulse"></i> Health</a></li>
+                <li><a href="advisory.html"><i class="fa-solid fa-bullhorn"></i> Advisory</a></li>
+                <li><a href="districts.html"><i class="fa-solid fa-table-list"></i> Districts</a></li>
+            </ul>
+
+            <div class="user-profile">
+                <div class="avatar"><i class="fa-regular fa-user"></i></div>
+                <div class="profile-info">
+                    <span class="name" id="sidebarName">Guest User</span>
+                    <span class="settings"><i class="fa-solid fa-gear"></i> Settings</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="header">
+                <h2><i class="fa-solid fa-heart-pulse" style="margin-right:10px;color:var(--accent-blue);"></i> Personalized Health</h2>
+            </header>
+
+            <div style="padding: 2rem;">
+                <div class="health-grid">
+
+                    <!-- ─── LEFT: User Profile Form ─── -->
+                    <div class="glass-panel profile-card">
+                        <div class="profile-header">
+                            <div class="profile-avatar">
+                                <i class="fa-solid fa-user-shield"></i>
+                            </div>
+                            <div>
+                                <h3 style="margin-bottom:0.2rem;">Your Health Profile</h3>
+                                <p style="font-size:0.82rem;color:var(--text-secondary);">Fill in your details to calculate personalised risk</p>
+                            </div>
+                        </div>
+
+                        <!-- Name -->
+                        <div class="form-group">
+                            <label class="form-label" for="profileName"><i class="fa-solid fa-id-card"></i> Full Name</label>
+                            <input type="text" id="profileName" class="form-input" placeholder="e.g. Aarav Singh">
+                        </div>
+
+                        <!-- Age slider -->
+                        <div class="form-group">
+                            <label class="form-label" for="profileAge"><i class="fa-solid fa-cake-candles"></i> Age</label>
+                            <div class="range-wrapper">
+                                <input type="range" id="profileAge" min="1" max="100" value="28">
+                                <span class="range-val" id="ageDisplay">28</span>
+                            </div>
+                        </div>
+
+                        <!-- Gender -->
+                        <div class="form-group">
+                            <label class="form-label" for="profileGender"><i class="fa-solid fa-venus-mars"></i> Gender</label>
+                            <select id="profileGender" class="form-select">
+                                <option value="any">Prefer not to say</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+
+                        <!-- Current AQI input -->
+                        <div class="form-group">
+                            <label class="form-label" for="inputAqi"><i class="fa-solid fa-wind"></i> Current AQI at your location</label>
+                            <input type="number" id="inputAqi" class="form-input" placeholder="e.g. 124" min="0" max="500">
+                        </div>
+
+                        <!-- Health Conditions -->
+                        <div class="form-group">
+                            <label class="form-label"><i class="fa-solid fa-lungs"></i> Pre-existing Conditions</label>
+                            <div class="condition-grid" id="conditionGrid">
+                                <label class="condition-label" id="lbl-asthma">
+                                    <input type="checkbox" value="asthma"> Asthma
+                                </label>
+                                <label class="condition-label" id="lbl-heart">
+                                    <input type="checkbox" value="heart"> Heart Disease
+                                </label>
+                                <label class="condition-label" id="lbl-diabetes">
+                                    <input type="checkbox" value="diabetes"> Diabetes
+                                </label>
+                                <label class="condition-label" id="lbl-allergies">
+                                    <input type="checkbox" value="allergies"> Allergies
+                                </label>
+                                <label class="condition-label" id="lbl-copd">
+                                    <input type="checkbox" value="copd"> COPD
+                                </label>
+                                <label class="condition-label" id="lbl-pregnancy">
+                                    <input type="checkbox" value="pregnancy"> Pregnancy
+                                </label>
+                            </div>
+                        </div>
+
+                        <button class="btn-calculate" id="btnCalculate">
+                            <i class="fa-solid fa-calculator"></i> Calculate My Risk
+                        </button>
+                    </div>
+
+                    <!-- ─── RIGHT: Results Panel ─── -->
+                    <div class="results-section" id="resultsSection">
+                        <div class="results-placeholder" id="resultsPlaceholder">
+                            <i class="fa-solid fa-shield-heart"></i>
+                            <p>Fill in your health profile on the left and click<br><b>Calculate My Risk</b> to see your personalized results.</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+    // ── Age slider live display ──────────────────────────────────────
+    const ageSlider = document.getElementById('profileAge');
+    const ageDisplay = document.getElementById('ageDisplay');
+    ageSlider.addEventListener('input', () => ageDisplay.textContent = ageSlider.value);
+
+    // ── Checkbox visual toggle ───────────────────────────────────────
+    document.querySelectorAll('.condition-label input[type=checkbox]').forEach(cb => {
+        cb.addEventListener('change', () => {
+            cb.closest('.condition-label').classList.toggle('checked', cb.checked);
+        });
+    });
+
+    // ── Risk Engine ──────────────────────────────────────────────────
+    const CONDITION_WEIGHTS = {
+        asthma: 25, heart: 30, diabetes: 15, allergies: 10, copd: 30, pregnancy: 20
+    };
+
+    function getAqiBaseline(aqi) {
+        if (aqi <= 50)  return 5;
+        if (aqi <= 100) return 20;
+        if (aqi <= 150) return 40;
+        if (aqi <= 200) return 60;
+        if (aqi <= 300) return 80;
+        return 100;
+    }
+
+    function getAgeRisk(age) {
+        if (age < 5)   return 30;
+        if (age < 12)  return 15;
+        if (age < 65)  return 0;
+        if (age < 75)  return 15;
+        return 25;
+    }
+
+    function getAqiColor(score) {
+        if (score <= 20)  return 'var(--aqi-good)';
+        if (score <= 40)  return 'var(--aqi-moderate)';
+        if (score <= 60)  return 'var(--aqi-unhealthy-sensitive)';
+        if (score <= 80)  return 'var(--aqi-unhealthy)';
+        if (score <= 90)  return 'var(--aqi-very-unhealthy)';
+        return 'var(--aqi-hazardous)';
+    }
+
+    function getRiskLabel(score) {
+        if (score <= 20) return { label: 'Low Risk',       icon: 'fa-shield', tip: 'Air quality poses minimal health risk for you today.' };
+        if (score <= 40) return { label: 'Moderate Risk',  icon: 'fa-shield-halved', tip: 'Some precautions are advised, especially during peak hours.' };
+        if (score <= 60) return { label: 'Elevated Risk',  icon: 'fa-triangle-exclamation', tip: 'Limit prolonged outdoor exposure. Keep medication on hand.' };
+        if (score <= 80) return { label: 'High Risk',      icon: 'fa-circle-exclamation', tip: 'Avoid outdoor activities. Wear an N95 mask if you must go out.' };
+        return               { label: 'Very High Risk',    icon: 'fa-biohazard', tip: 'Stay indoors. Seek medical advice if you experience symptoms.' };
+    }
+
+    function getAdviceCards(score, conditions, age) {
+        const cards = [];
+        const isVulnerable = conditions.length > 0 || age < 12 || age >= 65;
+
+        if (score <= 40) {
+            cards.push({ cls:'safe', icon:'fa-person-walking', title:'Outdoor Activity', desc:'Air quality is acceptable for most outdoor activities today. Enjoy your regular routine.' });
+            cards.push({ cls:'safe', icon:'fa-house-chimney-window', title:'Ventilation', desc:'It\'s a good day to open windows and let fresh air circulate through your home.' });
+        } else if (score <= 60) {
+            cards.push({ cls:'warn', icon:'fa-person-running', title:'Outdoor Activity', desc:'Reduce prolonged or heavy exertion outdoors. Opt for a lighter pace or move workouts inside.' });
+            cards.push({ cls:'info', icon:'fa-house-chimney-window', title:'Ventilation', desc:'Keep windows closed during afternoon peak hours. Use air purifiers if available.' });
+        } else {
+            cards.push({ cls:'danger', icon:'fa-person-walking', title:'Stay Indoors', desc:'Outdoor activity is strongly discouraged. If absolutely necessary, keep trips very short.' });
+            cards.push({ cls:'danger', icon:'fa-house-chimney-window', title:'Seal Indoors', desc:'Keep windows and doors closed. Run AC on recirculate mode and use HEPA air purifiers.' });
+        }
+
+        // Mask
+        if (score > 40) {
+            cards.push({ cls:'warn', icon:'fa-mask-face', title:'Wear a Mask', desc:'An N95 or KN95 mask is recommended outdoors, especially near traffic or industrial zones.' });
+        } else {
+            cards.push({ cls:'info', icon:'fa-mask-face', title:'Mask Optional', desc:'A mask is not required today, but sensitive individuals may prefer to carry one.' });
+        }
+
+        // Condition-specific
+        if (conditions.includes('asthma') || conditions.includes('copd')) {
+            cards.push({ cls:'danger', icon:'fa-lungs', title:'Respiratory Alert', desc:'Keep your rescue inhaler accessible at all times. Avoid triggers like dust, smoke, and pollen.' });
+        } else if (conditions.includes('heart')) {
+            cards.push({ cls:'danger', icon:'fa-heart-pulse', title:'Cardiac Caution', desc:'Avoid strenuous activity. Monitor for chest tightness or shortness of breath.' });
+        } else if (conditions.includes('pregnancy')) {
+            cards.push({ cls:'warn', icon:'fa-baby', title:'Pregnancy Advisory', desc:'Minimise outdoor exposure. Stay indoors as much as possible and stay well-hydrated.' });
+        } else {
+            cards.push({ cls:'info', icon:'fa-pills', title:'General Wellness', desc:'Stay hydrated, eat antioxidant-rich foods, and avoid smoking or secondhand smoke.' });
+        }
+
+        return cards;
+    }
+
+    // ── Render Results ───────────────────────────────────────────────
+    function renderResults(name, age, aqi, conditions) {
+        const aqiBase = getAqiBaseline(aqi);
+        const ageBonus = getAgeRisk(age);
+        const condBonus = conditions.reduce((sum, c) => sum + (CONDITION_WEIGHTS[c] || 0), 0);
+
+        const rawScore = aqiBase + ageBonus + condBonus;
+        const score = Math.min(100, Math.round(rawScore));
+
+        const color = getAqiColor(score);
+        const { label, icon, tip } = getRiskLabel(score);
+        const advice = getAdviceCards(score, conditions, age);
+
+        // AQI factor %
+        const aqiPct = Math.min(100, Math.round((aqiBase / 100) * 100));
+        const agePct  = Math.min(100, Math.round(((ageBonus + 5) / 30) * 100));
+        const condPct = Math.min(100, Math.round((condBonus / 100) * 100));
+
+        const cards = advice.map(c => `
+            <div class="action-card ${c.cls}">
+                <div class="action-header"><i class="fa-solid ${c.icon}"></i> ${c.title}</div>
+                <div class="action-desc">${c.desc}</div>
+            </div>`).join('');
+
+        const section = document.getElementById('resultsSection');
+        section.innerHTML = `
+            <!-- Risk Score Card -->
+            <div class="risk-score-card glass-panel">
+                <div class="risk-meter">
+                    <svg viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="45" class="ring-bg"/>
+                        <circle cx="50" cy="50" r="45" class="ring-fill" id="riskRing"/>
+                    </svg>
+                    <div class="risk-meter-label">
+                        <span class="risk-score-num" id="riskNum" style="color:${color};">0</span>
+                        <span class="risk-score-text">/ 100</span>
+                    </div>
+                </div>
+                <div class="risk-score-info">
+                    <h3 style="color:${color};">${label}</h3>
+                    <p style="margin-bottom:0.75rem;">${tip}</p>
+                    <p style="font-size:0.82rem;color:var(--text-muted);">
+                        Profile: <b>${name || 'Anonymous'}</b>, Age <b>${age}</b> &nbsp;|&nbsp;
+                        AQI: <b>${aqi}</b> &nbsp;|&nbsp;
+                        Conditions: <b>${conditions.length > 0 ? conditions.join(', ') : 'None'}</b>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Factor Breakdown -->
+            <div class="glass-panel" style="padding:1.5rem;">
+                <h4 style="margin-bottom:1.25rem;font-size:1rem;">Risk Factor Breakdown</h4>
+                <div class="factor-list">
+                    <div class="factor-row">
+                        <span class="factor-name"><i class="fa-solid fa-wind" style="margin-right:6px;color:var(--accent-blue);"></i>AQI Level</span>
+                        <div class="factor-bar-track"><div class="factor-bar-fill" id="barAqi" style="background:${color};"></div></div>
+                        <span class="factor-pct" style="color:${color};" id="pctAqi">0%</span>
+                    </div>
+                    <div class="factor-row">
+                        <span class="factor-name"><i class="fa-solid fa-cake-candles" style="margin-right:6px;color:#f59e0b;"></i>Age Group</span>
+                        <div class="factor-bar-track"><div class="factor-bar-fill" id="barAge" style="background:#f59e0b;"></div></div>
+                        <span class="factor-pct" style="color:#f59e0b;" id="pctAge">0%</span>
+                    </div>
+                    <div class="factor-row">
+                        <span class="factor-name"><i class="fa-solid fa-lungs" style="margin-right:6px;color:#8b5cf6;"></i>Conditions</span>
+                        <div class="factor-bar-track"><div class="factor-bar-fill" id="barCond" style="background:#8b5cf6;"></div></div>
+                        <span class="factor-pct" style="color:#8b5cf6;" id="pctCond">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advice Cards -->
+            <div>
+                <h3 style="font-size:1.05rem;margin-bottom:1rem;border-bottom:1px solid var(--glass-border);padding-bottom:0.5rem;">
+                    Actionable Advice for Today
+                </h3>
+                <div class="action-cards">${cards}</div>
+            </div>
+        `;
+
+        // Animate ring
+        const ring = document.getElementById('riskRing');
+        const offset = 283 - (283 * (score / 100));
+        requestAnimationFrame(() => {
+            ring.style.stroke = color;
+            ring.style.strokeDashoffset = offset;
+        });
+
+        // Animate score counter
+        const numEl = document.getElementById('riskNum');
+        let current = 0;
+        const step = Math.ceil(score / 40);
+        const counter = setInterval(() => {
+            current = Math.min(score, current + step);
+            numEl.textContent = current;
+            if (current >= score) clearInterval(counter);
+        }, 30);
+
+        // Animate bars after brief delay
+        setTimeout(() => {
+            document.getElementById('barAqi').style.width  = aqiPct + '%';
+            document.getElementById('barAge').style.width  = agePct + '%';
+            document.getElementById('barCond').style.width = condPct + '%';
+            document.getElementById('pctAqi').textContent  = aqiPct + '%';
+            document.getElementById('pctAge').textContent  = agePct + '%';
+            document.getElementById('pctCond').textContent = condPct + '%';
+        }, 200);
+
+        // Update sidebar name
+        if (name) document.getElementById('sidebarName').textContent = name.split(' ')[0];
+    }
+
+    // ── Button Handler ───────────────────────────────────────────────
+    document.getElementById('btnCalculate').addEventListener('click', () => {
+        const name  = document.getElementById('profileName').value.trim();
+        const age   = parseInt(ageSlider.value);
+        const aqi   = parseInt(document.getElementById('inputAqi').value) || 50;
+        const conditions = [...document.querySelectorAll('.condition-label input:checked')]
+                            .map(cb => cb.value);
+
+        if (aqi < 0 || aqi > 500) {
+            document.getElementById('inputAqi').style.borderColor = 'var(--aqi-unhealthy)';
+            return;
+        }
+        document.getElementById('inputAqi').style.borderColor = '';
+
+        renderResults(name, age, aqi, conditions);
+    });
+    </script>
+</body>
+</html>

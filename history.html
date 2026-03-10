@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Quality History | AeroSense</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <style>
+        .history-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .date-input {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--glass-border);
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius-sm);
+            font-family: var(--font-family);
+            color-scheme: dark;
+        }
+
+        .data-table-container {
+            width: 100%;
+            overflow-x: auto;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius-lg);
+            backdrop-filter: var(--glass-blur);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .data-table th, .data-table td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .data-table th {
+            color: var(--text-secondary);
+            font-weight: 500;
+            background: rgba(15, 23, 42, 0.4);
+            position: sticky;
+            top: 0;
+        }
+
+        .data-table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+            transition: var(--transition-fast);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--border-radius-full);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #fff;
+        }
+        
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .summary-card {
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .summary-val {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0.5rem 0;
+        }
+        
+        @media (max-width: 900px) {
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+            .history-controls {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+        }
+
+        /* ─── Live OpenAQ table ─────────────────── */
+        .live-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .live-section-header h3 {
+            font-size: 1.05rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .live-search-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius-sm);
+            padding: 0.45rem 0.9rem;
+        }
+
+        .live-search-bar input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-family: var(--font-family);
+            font-size: 0.9rem;
+            width: 160px;
+        }
+
+        .btn-load {
+            background: linear-gradient(135deg, var(--accent-blue), #6366f1);
+            color: #fff;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            padding: 0.5rem 1.1rem;
+            font-family: var(--font-family);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+
+        .btn-load:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-load:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .live-table-container {
+            width: 100%;
+            overflow-x: auto;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius-lg);
+            backdrop-filter: var(--glass-blur);
+            margin-bottom: 2.5rem;
+        }
+
+        .live-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .live-table th, .live-table td {
+            padding: 0.85rem 1.25rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.88rem;
+        }
+
+        .live-table th {
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: rgba(15,23,42,0.4);
+            position: sticky;
+            top: 0;
+        }
+
+        .live-table tbody tr:hover {
+            background: rgba(255,255,255,0.02);
+        }
+
+        .param-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: rgba(59,130,246,0.15);
+            color: var(--accent-blue);
+        }
+
+        .param-badge.pm25 { background: rgba(249,115,22,0.15); color: #f97316; }
+        .param-badge.pm10 { background: rgba(139,92,246,0.15); color: #8b5cf6; }
+        .param-badge.no2  { background: rgba(239,68,68,0.15);  color: #ef4444; }
+        .param-badge.o3   { background: rgba(16,185,129,0.15); color: #10b981; }
+        .param-badge.co   { background: rgba(245,158,11,0.15); color: #f59e0b; }
+
+        .live-table-msg {
+            text-align: center;
+            padding: 2.5rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* AQI category row accent */
+        .live-table tbody tr.aqi-good   { border-left: 3px solid #10b981; }
+        .live-table tbody tr.aqi-mod    { border-left: 3px solid #f59e0b; }
+        .live-table tbody tr.aqi-usg    { border-left: 3px solid #f97316; }
+        .live-table tbody tr.aqi-unhlth { border-left: 3px solid #ef4444; }
+        .live-table tbody tr.aqi-very   { border-left: 3px solid #8b5cf6; }
+        .live-table tbody tr.aqi-haz    { border-left: 3px solid #881337; }
+
+        .aqi-cat-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .btn-load-tn {
+            background: linear-gradient(135deg, #10b981, #0d9488);
+            color: #fff;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            padding: 0.5rem 1.1rem;
+            font-family: var(--font-family);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        .btn-load-tn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-load-tn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="logo">
+                <i class="fa-solid fa-wind"></i>
+                <span>AeroSense</span>
+            </div>
+            
+            <ul class="nav-links">
+                <li>
+                    <a href="index.html"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+                </li>
+                <li>
+                    <a href="heatmap.html"><i class="fa-solid fa-map-location-dot"></i> Heatmap</a>
+                </li>
+                <li class="active">
+                    <a href="history.html"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
+                </li>
+                <li>
+                    <a href="health.html"><i class="fa-solid fa-heart-pulse"></i> Health</a>
+                </li>
+                <li>
+                    <a href="advisory.html"><i class="fa-solid fa-bullhorn"></i> Advisory</a>
+                </li>
+                <li>
+                    <a href="districts.html"><i class="fa-solid fa-table-list"></i> Districts</a>
+                </li>
+            </ul>
+
+            
+            <div class="user-profile">
+                <div class="avatar">
+                    <i class="fa-regular fa-user"></i>
+                </div>
+                <div class="profile-info">
+                    <span class="name">Guest User</span>
+                    <span class="settings"><i class="fa-solid fa-gear"></i> Settings</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header Section -->
+            <header class="header">
+                <h2><i class="fa-solid fa-clock-rotate-left" style="margin-right: 10px; color: var(--accent-blue);"></i> Historical Data</h2>
+                
+                <div class="header-actions">
+                    <button class="btn btn-icon" id="btnExport" title="Export as CSV">
+                        <i class="fa-solid fa-download"></i>
+                    </button>
+                    <button class="btn btn-icon" title="Notifications">
+                        <i class="fa-regular fa-bell"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div style="padding: 2rem;">
+                
+                <!-- ─── LIVE OpenAQ Section ─── -->
+                <div class="live-section-header">
+                    <h3><i class="fa-solid fa-satellite-dish" style="color:var(--accent-blue);"></i> Live Station Readings <span id="liveCity" style="color:var(--text-muted);font-weight:400;font-size:0.85rem;"></span></h3>
+                    <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+                        <div class="live-search-bar">
+                            <i class="fa-solid fa-magnifying-glass" style="color:var(--text-muted);"></i>
+                            <input type="text" id="aqiCityInput" placeholder="Enter city…" value="Chennai">
+                        </div>
+                        <button class="btn-load" id="btnLoadLive">
+                            <i class="fa-solid fa-rotate"></i> Load Data
+                        </button>
+                        <button class="btn-load-tn" id="btnLoadTN" title="Load all Tamil Nadu major cities">
+                            <i class="fa-solid fa-map"></i> All Tamil Nadu
+                        </button>
+                    </div>
+                </div>
+
+                <div class="live-table-container">
+                    <table class="live-table">
+                        <thead>
+                            <tr>
+                                <th>Location / Station</th>
+                                <th>City</th>
+                                <th>Country</th>
+                                <th>Parameter</th>
+                                <th>Value</th>
+                                <th>Unit</th>
+                                <th>AQI Category</th>
+                                <th>Last Updated</th>
+                            </tr>
+                        </thead>
+                        <tbody id="liveTableBody">
+                            <tr><td colspan="8" class="live-table-msg"><i class="fa-solid fa-circle-info"></i> Enter a city or click <b>All Tamil Nadu</b> to fetch live readings.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- historical controls + table stay below as before -->
+                <div class="history-controls">
+                    <div class="filter-group">
+                        <select class="custom-select" id="locationFilter">
+                            <option value="San Francisco, CA">San Francisco, CA</option>
+                            <option value="Los Angeles, CA">Los Angeles, CA</option>
+                            <option value="New York, NY">New York, NY</option>
+                        </select>
+                        <select class="custom-select" id="rangeFilter">
+                            <option value="7">Last 7 Days</option>
+                            <option value="30">Last 30 Days</option>
+                            <option value="90">Last 90 Days</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <input type="date" class="date-input" id="startDate">
+                        <span style="align-self:center;">to</span>
+                        <input type="date" class="date-input" id="endDate">
+                    </div>
+                </div>
+
+                <!-- Summary statistics -->
+                <div class="summary-cards">
+                    <div class="glass-panel summary-card">
+                        <h4 style="color: var(--text-secondary);">Average AQI</h4>
+                        <div class="summary-val" id="avgAqi" style="color: var(--aqi-good);">42</div>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);"><i class="fa-solid fa-arrow-down" style="color: var(--aqi-good);"></i> 12% vs previous period</p>
+                    </div>
+                    <div class="glass-panel summary-card">
+                        <h4 style="color: var(--text-secondary);">Highest AQI Recorded</h4>
+                        <div class="summary-val" id="maxAqi" style="color: var(--aqi-unhealthy-sensitive);">128</div>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Recorded on Oct 12, 2:00 PM</p>
+                    </div>
+                    <div class="glass-panel summary-card">
+                        <h4 style="color: var(--text-secondary);">Days in "Good" Range</h4>
+                        <div class="summary-val" id="goodDays">5 / 7</div>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Excellent air quality continuity</p>
+                    </div>
+                </div>
+
+                <!-- Expanded Data Table -->
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Location</th>
+                                <th>AQI</th>
+                                <th>Status</th>
+                                <th>PM2.5 (µg/m³)</th>
+                                <th>PM10 (µg/m³)</th>
+                                <th>NO₂ (µg/m³)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- History Logic -->
+    <script src="js/history.js"></script>
+    
+    <script>
+    // ─── Synthetic "Live" AQI section using local dataset only ────────
+    const TN_CITIES = ['Chennai','Coimbatore','Madurai','Tiruchirappalli','Salem',
+                       'Tirunelveli','Tiruppur','Vellore','Erode','Thoothukudi',
+                       'Dindigul','Thanjavur','Hosur','Nagercoil','Kumbakonam'];
+
+    let syntheticLiveData = [];
+
+    async function ensureSyntheticDataLoaded() {
+        if (syntheticLiveData.length) return;
+        try {
+            const res = await fetch('assets/data/aqi_data.json');
+            syntheticLiveData = await res.json();
+        } catch (e) {
+            console.warn('Failed to load synthetic AQI dataset for live table.', e);
+        }
+    }
+
+    function getAQIInfo(val) {
+        if (val <= 50)  return { cls:'aqi-good',   label:'Good',                          color:'#10b981' };
+        if (val <= 100) return { cls:'aqi-mod',    label:'Moderate',                      color:'#f59e0b' };
+        if (val <= 150) return { cls:'aqi-usg',    label:'Unhealthy (Sens. Groups)',      color:'#f97316' };
+        if (val <= 200) return { cls:'aqi-unhlth', label:'Unhealthy',                     color:'#ef4444' };
+        if (val <= 300) return { cls:'aqi-very',   label:'Very Unhealthy',                color:'#8b5cf6' };
+        return             { cls:'aqi-haz',        label:'Hazardous',                     color:'#881337' };
+    }
+
+    function getParamClass(param) {
+        const map = { pm25:'pm25', pm10:'pm10', no2:'no2', o3:'o3', co:'co' };
+        return map[param] || '';
+    }
+
+    function renderRows(tbody, results, cityName) {
+        let allValues = [];
+        results.forEach(station => {
+            station.measurements.forEach(m => {
+                if (m.value == null || m.value < 0) return;
+                allValues.push(m.value);
+
+                const { cls, label, color } = getAQIInfo(m.value);
+                const updated  = m.lastUpdated ? new Date(m.lastUpdated).toLocaleString() : '—';
+                const paramCls = getParamClass(m.parameter);
+
+                const tr = document.createElement('tr');
+                tr.className = cls;
+                tr.innerHTML = `
+                    <td style="font-weight:500;">${station.location || '—'}</td>
+                    <td style="color:var(--text-secondary);">${station.city || cityName}</td>
+                    <td style="color:var(--text-muted);">India</td>
+                    <td><span class="param-badge ${paramCls}">${m.parameter.toUpperCase()}</span></td>
+                    <td style="font-weight:700;">${Number(m.value).toFixed(1)}</td>
+                    <td style="color:var(--text-muted);font-size:0.8rem;">${m.unit}</td>
+                    <td><span class="aqi-cat-badge" style="background:${color}22;color:${color};">${label}</span></td>
+                    <td style="color:var(--text-muted);font-size:0.8rem;">${updated}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        });
+        return allValues;
+    }
+
+    function updateSummary(allValues) {
+        if (!allValues.length) return;
+        const avg = Math.round(allValues.reduce((a,b)=>a+b,0) / allValues.length);
+        const max = Math.round(Math.max(...allValues));
+        document.getElementById('avgAqi').textContent  = avg;
+        document.getElementById('maxAqi').textContent  = max;
+        document.getElementById('goodDays').textContent = allValues.filter(v=>v<=50).length + ' / ' + allValues.length;
+    }
+
+    function buildSyntheticStationsFromCities(cities) {
+        const nowIso = new Date().toISOString();
+        return cities.map(c => {
+            const basePm25 = c.PM25;
+            const basePm10 = c.PM10;
+            const baseNo2  = Math.max(5, c.AQI * 0.4);
+            const jitter = (range) => (Math.random() - 0.5) * range;
+
+            return {
+                location: `${c.city} Central`,
+                city: c.city,
+                country: 'India',
+                measurements: [
+                    { parameter:'pm25', value: basePm25 + jitter(6),  unit:'µg/m³', lastUpdated: nowIso },
+                    { parameter:'pm10', value: basePm10 + jitter(12), unit:'µg/m³', lastUpdated: nowIso },
+                    { parameter:'no2',  value: baseNo2  + jitter(15), unit:'µg/m³', lastUpdated: nowIso }
+                ]
+            };
+        });
+    }
+
+    // ─── Load single city from local dataset ──────────────────────────
+    async function fetchLiveAQI(city) {
+        const btn    = document.getElementById('btnLoadLive');
+        const tbody  = document.getElementById('liveTableBody');
+        const label  = document.getElementById('liveCity');
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading…';
+        tbody.innerHTML = `<tr><td colspan="8" class="live-table-msg"><i class="fa-solid fa-spinner fa-spin"></i> Building synthetic profile for <b>${city}</b>…</td></tr>`;
+
+        await ensureSyntheticDataLoaded();
+
+        const q = city.toLowerCase();
+        const matches = syntheticLiveData.filter(c =>
+            c.city.toLowerCase().includes(q) || c.state.toLowerCase().includes(q)
+        );
+
+        if (!matches.length) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Load Data';
+            tbody.innerHTML = `<tr><td colspan="8" class="live-table-msg"><i class="fa-solid fa-circle-info"></i> No records found in local dataset for <b>${city}</b>.</td></tr>`;
+            return;
+        }
+
+        const stations = buildSyntheticStationsFromCities(matches);
+
+        label.textContent = '— ' + city;
+        tbody.innerHTML = '';
+        const vals = renderRows(tbody, stations, city);
+        updateSummary(vals);
+
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Load Data';
+    }
+
+    // ─── Load ALL Tamil Nadu cities using local dataset ───────────────
+    async function fetchAllTN() {
+        const btn   = document.getElementById('btnLoadTN');
+        const tbody = document.getElementById('liveTableBody');
+        const label = document.getElementById('liveCity');
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading TN…';
+        document.getElementById('btnLoadLive').disabled = true;
+        tbody.innerHTML = `<tr><td colspan="8" class="live-table-msg"><i class="fa-solid fa-spinner fa-spin"></i> Generating AQI for <b>${TN_CITIES.length} Tamil Nadu cities</b> from master dataset…</td></tr>`;
+
+        await ensureSyntheticDataLoaded();
+
+        tbody.innerHTML = '';
+        label.textContent = '— Tamil Nadu (All Cities)';
+
+        let allValues = [];
+
+        TN_CITIES.forEach(cityName => {
+            const match = syntheticLiveData.find(c => c.city.toLowerCase() === cityName.toLowerCase());
+
+            let baseCity;
+            if (match) {
+                baseCity = match;
+            } else {
+                // Fallback synthetic entry if not present in dataset
+                const aqi = 60 + Math.random() * 100;
+                baseCity = {
+                    city: cityName,
+                    state: 'Tamil Nadu',
+                    AQI: Math.round(aqi),
+                    PM25: Math.round(aqi * 0.6),
+                    PM10: Math.round(aqi * 0.9)
+                };
+            }
+
+            // Section separator row
+            const sep = document.createElement('tr');
+            sep.innerHTML = `<td colspan="8" style="padding:0.5rem 1.25rem;font-size:0.78rem;font-weight:700;color:var(--accent-blue);background:rgba(59,130,246,0.06);letter-spacing:0.05em;">▶ ${cityName.toUpperCase()}</td>`;
+            tbody.appendChild(sep);
+
+            const stations = buildSyntheticStationsFromCities([baseCity]);
+            const vals = renderRows(tbody, stations, cityName);
+            allValues = allValues.concat(vals);
+        });
+
+        if (!allValues.length) {
+            tbody.innerHTML = '<tr><td colspan="8" class="live-table-msg"><i class="fa-solid fa-circle-info"></i> No data available from local dataset.</td></tr>';
+        }
+
+        updateSummary(allValues);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-map"></i> All Tamil Nadu';
+        document.getElementById('btnLoadLive').disabled = false;
+    }
+
+    // ─── Event Listeners ──────────────────────────────────────────────
+    document.getElementById('btnLoadLive').addEventListener('click', () => {
+        const city = document.getElementById('aqiCityInput').value.trim();
+        if (city) fetchLiveAQI(city);
+    });
+    
+    document.getElementById('aqiCityInput').addEventListener('keypress', e => {
+        if (e.key === 'Enter') {
+            const city = e.target.value.trim();
+            if (city) fetchLiveAQI(city);
+        }
+    });
+    
+    document.getElementById('btnLoadTN').addEventListener('click', fetchAllTN);
+    
+    // Auto-load Tamil Nadu synthetic data on page open
+    fetchAllTN();
+    </script>
+</body>
+</html>
